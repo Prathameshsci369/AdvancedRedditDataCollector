@@ -7,4 +7,3 @@ fuzzywuzzy==0.18.0
 streamlit-autorefresh==0.1.0
 wordcloud==1.8.2.2
 matplotlib==3.6.2
-```
