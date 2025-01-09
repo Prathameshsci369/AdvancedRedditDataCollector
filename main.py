@@ -5,19 +5,20 @@ from datetime import datetime, timedelta
 import plotly.express as px
 import plotly.graph_objects as go
 from textblob import TextBlob
-from fuzzywuzzy import fuzz
 import logging
 from streamlit_autorefresh import st_autorefresh
-import base64
 from io import BytesIO
 from wordcloud import WordCloud
 import matplotlib.pyplot as plt
-import time
-import os
+import nltk
 
+# Download necessary NLTK data if not already present
+try:
+    nltk.download('punkt', quiet=True)
+except Exception as e:
+    st.error(f"Failed to download NLTK data: {e}")
 
 # Load environment variables
-
 
 # Auto refresh every 5 minutes
 count = st_autorefresh(interval=300000, key="datarefresher")
@@ -81,8 +82,15 @@ def check_reddit_connection():
 class AdvancedRedditDataCollector:
     def __init__(self):
         self.reddit = reddit
-        self.cache = {}
-        
+        self.cache_expiration = timedelta(minutes=10)  # Cache expiration time
+        self.cache = {}  # Cache to store API results
+        self.api_call_count = {}  # Track API call counts for each query
+        self.max_api_calls = 60  # Example limit for API calls
+
+    def get_cache_key(self, subreddit, keywords):
+        """Generate a unique cache key based on subreddit and keywords."""
+        return f"{subreddit}:{' '.join(keywords)}"
+
     def parse_search_query(self, query):
         """Parse complex search queries with AND/OR/NOT operators"""
         terms = query.lower().split()
@@ -109,8 +117,12 @@ class AdvancedRedditDataCollector:
 
     def collect_data_api(self, subreddit, keywords, limit=100, title_only=False, sort_by='hot'):
         try:
+            current_time = datetime.now()  # Define current time
             must_include, must_exclude = self.parse_search_query(" ".join(keywords))
             
+            # Create a cache key based on subreddit and keywords
+            cache_key = self.get_cache_key(subreddit, keywords)
+
             posts = []
             subreddit_obj = self.reddit.subreddit(subreddit)
             
@@ -159,6 +171,32 @@ class AdvancedRedditDataCollector:
                     return pd.DataFrame()
                     
                 df = pd.DataFrame(posts)
+                
+                # Log the columns of the DataFrame for debugging
+                logger.info(f"DataFrame columns: {df.columns.tolist()}")
+                
+                # Check if the data is in the cache and not expired
+                if cache_key in self.cache:
+                    cached_data, timestamp = self.cache[cache_key]
+                    if current_time - timestamp < self.cache_expiration:
+                        logger.info("Returning cached data.")
+                        return cached_data
+                
+                # Store the result in the cache
+                self.cache[cache_key] = (df, datetime.now())
+                
+                # Update API call count only if a new API call is made
+                if cache_key not in self.api_call_count:
+                    self.api_call_count[cache_key] = 0
+                self.api_call_count[cache_key] += 1
+                
+                # Print API call information
+                remaining_calls = self.max_api_calls - self.api_call_count[cache_key]
+                if remaining_calls < 0:
+                    remaining_calls = 0  # Ensure remaining calls do not go negative
+                logger.info(f"API calls for '{cache_key}': {self.api_call_count[cache_key]}, Remaining calls: {remaining_calls}")
+                print(f"API calls for '{cache_key}': {self.api_call_count[cache_key]}, Remaining calls: {remaining_calls}")
+                
                 return df
                 
         except Exception as e:
@@ -166,47 +204,110 @@ class AdvancedRedditDataCollector:
             st.error(f"Error collecting data from API: {str(e)}")
             return None
 
-    def generate_advanced_visualizations(self, df):
-        """Generate advanced visualizations"""
-        st.write("### 📊 Advanced Visualizations")
-        
-        # Time-based heatmap
-        fig_heatmap = go.Figure(data=go.Heatmap(
-            x=df['created_utc'].dt.hour,
-            y=df['created_utc'].dt.day_name(),
-            z=df['score'],
-            colorscale='Viridis'
-        ))
-        fig_heatmap.update_layout(
-            title='Post Activity Heatmap',
-            xaxis_title='Hour of Day',
-            yaxis_title='Day of Week'
-        )
-        st.plotly_chart(fig_heatmap)
-        
-        # Sentiment over time
-        fig_sentiment = px.scatter(df,
-            x='created_utc',
-            y='sentiment_polarity',
-            size='score',
-            color='num_comments',
-            hover_data=['title'],
-            title='Sentiment and Engagement Over Time'
-        )
-        st.plotly_chart(fig_sentiment)
-        
-        # Word cloud of titles
-        if len(df) > 0:
-            text = ' '.join(df['title'].astype(str))
-            wordcloud = WordCloud(
-                width=800, height=400,
-                background_color='white'
-            ).generate(text)
-            
-            plt.figure(figsize=(10, 5))
-            plt.imshow(wordcloud, interpolation='bilinear')
-            plt.axis('off')
-            st.pyplot(plt)
+def analyze_trending_topics(df):
+    """Analyze subreddit data to identify trending topics."""
+    if df.empty:
+        return []
+    topics = df['title'].value_counts().head(10)
+    return topics
+
+def date_wise_analysis(df):
+    """Provide a timeline visualization of discussions."""
+    df['created_utc'] = pd.to_datetime(df['created_utc'])
+    df.set_index('created_utc', inplace=True)
+    df.resample('M').size().plot()
+    plt.title('Discussions Over Time')
+    plt.xlabel('Date')
+    plt.ylabel('Number of Discussions')
+    st.pyplot(plt)
+
+def audience_engagement_metrics(df):
+    """Display audience engagement metrics."""
+    total_users = df['author'].nunique()
+    avg_sentiment = df['sentiment_polarity'].mean()
+    st.write(f'Total Users Participating: {total_users}')
+    st.write(f'Average Sentiment: {avg_sentiment:.2f}')
+
+def generate_summary(df):
+    """Generate a summary of discussions."""
+    sentences = df['title'].apply(lambda x: TextBlob(x).sentences)
+    summary = ' '.join([' '.join(map(str, sentence)) for sentence in sentences])
+    return summary
+
+def future_predictions(df):
+    """Predict future relevance based on trends."""
+    if df.empty:
+        st.write("No data available for predictions.")
+        return
+
+    # Check if 'created_utc' column exists
+    if 'created_utc' not in df.columns:
+        st.write("The 'created_utc' column is missing from the data.")
+        return
+
+    # Example analysis: Calculate average sentiment and trends
+    avg_sentiment = df['sentiment_polarity'].mean()
+    st.write(f"Average Sentiment: {avg_sentiment:.2f}")
+
+    # Trend analysis: Count posts over time
+    df['created_utc'] = pd.to_datetime(df['created_utc'])
+    trend_data = df.set_index('created_utc').resample('M').size()
+    
+    # Plotting the trend
+    fig = px.line(trend_data, x=trend_data.index, y=trend_data.values, title='Post Trends Over Time')
+    st.plotly_chart(fig)
+
+def suggest_related_subreddits(topic):
+    """Suggest related subreddits based on the topic."""
+    try:
+        subreddit_results = reddit.subreddits.search_by_name(topic, exact=False)
+        return [sub.display_name for sub in subreddit_results]
+    except Exception as e:
+        logger.error(f"Error fetching related subreddits: {str(e)}")
+        return []
+
+def fetch_and_display_posts(selected_subreddits, keywords):
+    """Fetch and display posts based on selected subreddits and keywords."""
+    collector = AdvancedRedditDataCollector()
+    all_dataframes = []  # List to hold DataFrames for each selected subreddit
+    
+    for subreddit in selected_subreddits:
+        try:
+            df = collector.collect_data_api(subreddit, keywords)
+            if df is not None and not df.empty:
+                all_dataframes.append(df)
+        except Exception as e:
+            logger.error(f"Error collecting data for subreddit {subreddit}: {str(e)}")
+            st.error(f"Error collecting data for subreddit {subreddit}: {str(e)}")
+
+    if all_dataframes:
+        combined_df = pd.concat(all_dataframes, ignore_index=True)
+        st.write("### Combined Data Preview")
+        st.dataframe(combined_df)
+
+        # Display trending topics
+        trending_topics = analyze_trending_topics(combined_df)
+        st.write("### Trending Topics")
+        st.bar_chart(trending_topics)
+
+        # Date-wise analysis
+        date_wise_analysis(combined_df)
+
+        # Audience engagement metrics
+        audience_engagement_metrics(combined_df)
+
+        # Summary and insights
+        summary = generate_summary(combined_df)
+        st.write("### Summary of Discussions")
+        st.write(summary)
+
+        # Future predictions
+        future_predictions(combined_df)
+
+        # Download button for CSV
+        download_csv(combined_df)
+    else:
+        st.warning("No data found for the selected subreddits and keywords.")
 
 def download_csv(df):
     """
@@ -252,27 +353,49 @@ def save_data(df, filename):
         logger.error(f"Error saving data: {str(e)}")
         st.error(f"Error saving data: {str(e)}")
 
+def keyword_frequency_analysis(df, keywords):
+    """Analyze keyword frequency in the DataFrame."""
+    keyword_counts = {keyword: 0 for keyword in keywords}
+    
+    for index, row in df.iterrows():
+        title = row['title'].lower()
+        for keyword in keywords:
+            keyword_counts[keyword] += title.count(keyword.lower())
+    
+    # Create a bar chart for keyword frequencies
+    st.write("### Keyword Frequency Analysis")
+    st.bar_chart(keyword_counts)
+    
 # Streamlit UI
 st.title("Reddit Data Analyzer")
 
 # Input for subreddit and keywords
-subreddit = st.text_input("Enter Subreddit:", "learnpython")
-keywords = st.text_input("Enter Keywords (space-separated):", "python programming")
+topic = st.text_input("Enter Topic:", "learnpython")
+# Use Streamlit's session state to retain selected subreddits
+if 'subreddits' not in st.session_state:
+    st.session_state.subreddits = []  # Initialize session state for subreddits
+
+# Button to fetch related subreddits
+if st.button("Fetch Related Subreddits"):
+    if check_reddit_connection():
+        try:
+            # Search for related subreddits based on the topic
+            st.session_state.subreddits = suggest_related_subreddits(topic)  # Store in session state
+            if st.session_state.subreddits:
+                st.success("Related subreddits found!")
+            else:
+                st.warning("No related subreddits found.")
+        except Exception as e:
+            logger.error(f"Error fetching subreddits: {str(e)}")
+            st.error(f"Error fetching subreddits: {str(e)}")
+
+# Multi-select for user to choose subreddits
+selected_subreddits = st.multiselect("Select Subreddits:", st.session_state.subreddits)
+
+# Second input field for keywords
+keyword_input = st.text_input("Enter Keywords (space-separated):", "")
 
 # Button to fetch data
 if st.button("Fetch Data"):
     if check_reddit_connection():
-        collector = AdvancedRedditDataCollector()
-        df = collector.collect_data_api(subreddit, keywords.split())
-        
-        if df is not None and not df.empty:
-            st.write("### Data Preview")
-            st.dataframe(df)
-
-            # Generate visualizations
-            collector.generate_advanced_visualizations(df)
-
-            # Download button for CSV
-            download_csv(df)
-        else:
-            st.warning("No data found for the given subreddit and keywords.")
+        fetch_and_display_posts(selected_subreddits, keyword_input.split())
