@@ -11,9 +11,22 @@ from wordcloud import WordCloud
 import matplotlib.pyplot as plt
 import nltk
 
-# Ensure NLTK data is downloaded
-nltk.download('punkt', quiet=True)
-nltk.download('averaged_perceptron_tagger')  # Additional corpus that might be needed
+
+
+# Ensure TextBlob corpora are downloaded
+@st.cache_resource
+def download_textblob_corpora():
+    import os
+    try:
+        from textblob.download_corpora import download_all
+        nltk_data_path = os.path.join(os.path.expanduser('~'), 'nltk_data')
+        nltk.data.path.append(nltk_data_path)  # Add path for NLTK corpora
+        download_all()
+    except Exception as e:
+        st.error(f"Error downloading TextBlob corpora: {e}")
+
+# Call this to ensure the required corpora are available
+download_textblob_corpora()
 
 # Load environment variables
 
