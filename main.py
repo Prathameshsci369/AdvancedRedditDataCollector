@@ -11,9 +11,8 @@ from wordcloud import WordCloud
 import matplotlib.pyplot as plt
 import nltk
 
-# Check if NLTK data is already downloaded
-if not nltk.download('punkt', quiet=True):
-    st.error("NLTK data 'punkt' is not available. Please download it manually.")
+# Ensure NLTK data is downloaded
+nltk.download('punkt', quiet=True)
 
 # Load environment variables
 
