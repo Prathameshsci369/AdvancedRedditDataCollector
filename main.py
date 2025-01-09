@@ -6,22 +6,16 @@ import plotly.express as px
 import plotly.graph_objects as go
 from textblob import TextBlob
 import logging
-from streamlit_autorefresh import st_autorefresh
 from io import BytesIO
 from wordcloud import WordCloud
 import matplotlib.pyplot as plt
 import nltk
 
-# Download necessary NLTK data if not already present
-try:
-    nltk.download('punkt', quiet=True)
-except Exception as e:
-    st.error(f"Failed to download NLTK data: {e}")
+# Check if NLTK data is already downloaded
+if not nltk.download('punkt', quiet=True):
+    st.error("NLTK data 'punkt' is not available. Please download it manually.")
 
 # Load environment variables
-
-# Auto refresh every 5 minutes
-count = st_autorefresh(interval=300000, key="datarefresher")
 
 # Setup logging
 log_file = "reddit_analyzer.log"
@@ -40,6 +34,7 @@ REDDIT_CREDENTIALS = {
 
 def setup_reddit_api():
     """Initialize and return Reddit API instance"""
+    reddit_instance = None
     try:
         reddit_instance = praw.Reddit(
             client_id=REDDIT_CREDENTIALS['client_id'],
@@ -49,11 +44,11 @@ def setup_reddit_api():
             password=REDDIT_CREDENTIALS['password'],
             check_for_async=False
         )
-        return reddit_instance
+        logger.info("Reddit API initialized successfully.")
     except Exception as e:
         logger.error(f"Failed to initialize Reddit API: {e}")
         st.error(f"Failed to initialize Reddit API: {e}")
-        raise
+    return reddit_instance
 
 # Create global reddit instance
 try:
@@ -116,6 +111,7 @@ class AdvancedRedditDataCollector:
         return must_include, must_exclude
 
     def collect_data_api(self, subreddit, keywords, limit=100, title_only=False, sort_by='hot'):
+        logger.info(f"Collecting data from subreddit: {subreddit} with keywords: {keywords}")
         try:
             current_time = datetime.now()  # Define current time
             must_include, must_exclude = self.parse_search_query(" ".join(keywords))
@@ -147,7 +143,7 @@ class AdvancedRedditDataCollector:
                     
                     # Check must_include and must_exclude terms
                     if all(term in search_text for term in must_include) and \
-                       not any(term in search_text for term in must_exclude):
+                    not any(term in search_text for term in must_exclude):
                         
                         sentiment = TextBlob(post.title).sentiment
                         post_data = {
@@ -203,7 +199,6 @@ class AdvancedRedditDataCollector:
             logger.error(f"Error collecting data from API: {str(e)}")
             st.error(f"Error collecting data from API: {str(e)}")
             return None
-
 def analyze_trending_topics(df):
     """Analyze subreddit data to identify trending topics."""
     if df.empty:
