@@ -12,10 +12,8 @@ import matplotlib.pyplot as plt
 import nltk
 
 # Ensure NLTK data is downloaded
-try:
-    nltk.download('punkt', quiet=True)
-except Exception as e:
-    st.error(f"Failed to download NLTK data: {e}")
+nltk.download('punkt', quiet=True)
+nltk.download('averaged_perceptron_tagger')  # Additional corpus that might be needed
 
 # Load environment variables
 
