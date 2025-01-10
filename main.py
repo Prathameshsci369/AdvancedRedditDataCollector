@@ -260,27 +260,25 @@ def audience_engagement_metrics(df):
     st.write(f'Total Users Participating: {total_users}')
     st.write(f'Average Sentiment: {avg_sentiment:.2f}')
 
-def generate_summary(df):
-    """Generate a summary of discussions."""
-    try:
-        sentences = df['title'].apply(lambda x: TextBlob(x).sentences)
-    except TextBlob.exceptions.MissingCorpusError:
-        logger.error("Missing corpus error while generating summary.")
-        #st.error("An error occurred while generating the summary. Please ensure all required resources are available.")
-        st.error(" Now app are anable to generate the summary due to some issue , we are working on that isseu....")
-        return ""
-    summary = ' '.join([' '.join(map(str, sentence)) for sentence in sentences])
-    return summary
+
   
 def generate_summary(df):
     """Generate a summary of discussions."""
-    if:
+    try:
+        # Attempt to extract sentences from the 'title' column using TextBlob
         sentences = df['title'].apply(lambda x: TextBlob(x).sentences)
-    else:
+    except MissingCorpusError:
+        # Log the specific error but show a generic message to the user
         logger.error("Missing corpus error while generating summary.")
-        #st.error("An error occurred while generating the summary. Please ensure all required resources are available.")
-        st.error(" Now app are anable to generate the summary due to some issue , we are working on that isseu....")
+        st.error("An error occurred while generating the summary. Please ensure all required resources are available.")
         return ""
+    except Exception as e:
+        # Log any other exceptions and display a generic error message
+        logger.error(f"An unexpected error occurred while generating the summary: {str(e)}")
+        st.error("An error occurred while generating the summary. Please try again later.")
+        return ""
+    
+    # Join the sentences into a single summary string
     summary = ' '.join([' '.join(map(str, sentence)) for sentence in sentences])
     return summary
 
