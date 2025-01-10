@@ -18,40 +18,47 @@ logging.basicConfig(level=logging.INFO, filename=log_file, filemode='a',
                     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
 logger = logging.getLogger('reddit_analyzer')
 
-# Ensure TextBlob corpora are downloaded
-@st.cache_resource
+import os
+import shutil
+import nltk
+import logging
+import streamlit as st
+from textblob.download_corpora import download_all
+
+# Setting up logging
+logger = logging.getLogger(__name__)
+
 def download_textblob_corpora():
-    import os
     try:
-        from textblob.download_corpora import download_all
         nltk_data_path = os.path.join('/home/appuser', 'nltk_data')  # Set a new path for NLTK data
 
         # Remove existing NLTK data if it exists
         if os.path.exists(nltk_data_path):
-            import shutil
             shutil.rmtree(nltk_data_path)  # Delete the existing directory
 
-        # Remove existing NLTK data if it exists
-        if os.path.exists(nltk_data_path):
-            import shutil
-            shutil.rmtree(nltk_data_path)  # Delete the existing directory
-
-        
         # Create the directory if it doesn't exist
         if not os.path.exists(nltk_data_path):
             os.makedirs(nltk_data_path)
         
         nltk.data.path.append(nltk_data_path)  # Add path for NLTK corpora
-        download_all()  # Download all required corpora
+        
+        # Download all required corpora
+        download_all()
         
         # Check if 'punkt_tab' is available
         try:
-            nltk.data.find('tokenizers/punkt_tab')
+            nltk.data.find('tokenizers/punkt')
+            logger.info("Successfully found 'punkt' tokenizer corpora.")
         except LookupError:
-            #st.error("The 'punkt_tab' resource is not available. Please ensure it is downloaded.")
+            st.error("The 'punkt' resource is not available. Please ensure it is downloaded.")
+            logger.error("The 'punkt' tokenizer corpora is missing.")
+        
+        logger.info("TextBlob corpora download complete.")
+        
     except Exception as e:
         logger.error(f"Error downloading TextBlob corpora: {e}")
         st.error("An error occurred while downloading the required resources. Please try again.")
+
 
 # Call this to ensure the required corpora are available
 download_textblob_corpora()
