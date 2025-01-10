@@ -282,7 +282,7 @@ def generate_summary(df):
         
         # Hide the detailed traceback from being shown in the Streamlit UI
         #error_message = "500: An internal server error occurred. Please try again later."
-        st.error(error_message)
+        #st.error(error_message)
         
         # Log the full traceback for debugging purposes (you can monitor logs)
         logger.error(f"Full error details: {traceback.format_exc()}")
