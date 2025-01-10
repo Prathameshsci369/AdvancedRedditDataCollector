@@ -20,7 +20,18 @@ def download_textblob_corpora():
     import os
     try:
         from textblob.download_corpora import download_all
-        nltk_data_path = os.path.join(os.path.expanduser('~'), 'nltk_data')
+        nltk_data_path = os.path.join('/home/appuser', 'nltk_data')  # Set a new path for NLTK data
+
+        # Remove existing NLTK data if it exists
+        if os.path.exists(nltk_data_path):
+            import shutil
+            shutil.rmtree(nltk_data_path)  # Delete the existing directory
+
+        # Remove existing NLTK data if it exists
+        if os.path.exists(nltk_data_path):
+            import shutil
+            shutil.rmtree(nltk_data_path)  # Delete the existing directory
+
         
         # Create the directory if it doesn't exist
         if not os.path.exists(nltk_data_path):
