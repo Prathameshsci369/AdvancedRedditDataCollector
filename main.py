@@ -261,26 +261,35 @@ def audience_engagement_metrics(df):
     st.write(f'Average Sentiment: {avg_sentiment:.2f}')
 
 
-  
+import traceback
+
 def generate_summary(df):
     """Generate a summary of discussions."""
     try:
         # Attempt to extract sentences from the 'title' column using TextBlob
         sentences = df['title'].apply(lambda x: TextBlob(x).sentences)
     except MissingCorpusError:
-        # Log the specific error but show a generic 500 error message to the user
+        # Log the specific error and show a generic 500 error message to the user
         logger.error("Missing corpus error while generating summary.")
         st.error("500: An internal server error occurred. Please try again later.")
         return ""
     except Exception as e:
-        # Log any other exceptions and display a generic 500 error message
+        # Log the specific exception but don't show traceback to the user
         logger.error(f"An unexpected error occurred while generating the summary: {str(e)}")
-        st.error("500: An internal server error occurred. Please try again later.")
+        
+        # Hide the detailed traceback from being shown in the Streamlit UI
+        error_message = "500: An internal server error occurred. Please try again later."
+        st.error(error_message)
+        
+        # Log the full traceback for debugging purposes (you can monitor logs)
+        logger.error(f"Full error details: {traceback.format_exc()}")
+        
         return ""
     
     # Join the sentences into a single summary string
     summary = ' '.join([' '.join(map(str, sentence)) for sentence in sentences])
     return summary
+  
 
 
 def future_predictions(df):
