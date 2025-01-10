@@ -266,7 +266,8 @@ def generate_summary(df):
         sentences = df['title'].apply(lambda x: TextBlob(x).sentences)
     except TextBlob.exceptions.MissingCorpusError:
         logger.error("Missing corpus error while generating summary.")
-        st.error("An error occurred while generating the summary. Please ensure all required resources are available.")
+        #st.error("An error occurred while generating the summary. Please ensure all required resources are available.")
+        st.error(" Now app are anable to generate the summary due to some issue , we are working on that isseu....")
         return ""
     summary = ' '.join([' '.join(map(str, sentence)) for sentence in sentences])
     return summary
