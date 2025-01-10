@@ -275,11 +275,7 @@ def generate_summary(df):
     try:
         # Attempt to extract sentences from the 'title' column using TextBlob
         sentences = df['title'].apply(lambda x: TextBlob(x).sentences)
-    except MissingCorpusError:
-        # Log the specific error and show a generic 500 error message to the user
-        logger.error("Missing corpus error while generating summary.")
-        #st.error("500: An internal server error occurred. Please try again later.")
-        return ""
+   
     except Exception as e:
         # Log the specific exception but don't show traceback to the user
         logger.error(f"An unexpected error occurred while generating the summary: {str(e)}")
