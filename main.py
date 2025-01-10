@@ -5,6 +5,7 @@ from datetime import datetime, timedelta
 import plotly.express as px
 import plotly.graph_objects as go
 from textblob import TextBlob
+import textblob
 import logging
 from io import BytesIO
 from wordcloud import WordCloud
@@ -20,8 +21,13 @@ def download_textblob_corpora():
     try:
         from textblob.download_corpora import download_all
         nltk_data_path = os.path.join(os.path.expanduser('~'), 'nltk_data')
+        
+        # Create the directory if it doesn't exist
+        if not os.path.exists(nltk_data_path):
+            os.makedirs(nltk_data_path)
+        
         nltk.data.path.append(nltk_data_path)  # Add path for NLTK corpora
-        download_all()
+        download_all()  # Download all required corpora
     except Exception as e:
         st.error(f"Error downloading TextBlob corpora: {e}")
 
