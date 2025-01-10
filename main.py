@@ -271,7 +271,7 @@ def generate_summary(df):
     except MissingCorpusError:
         # Log the specific error and show a generic 500 error message to the user
         logger.error("Missing corpus error while generating summary.")
-        st.error("500: An internal server error occurred. Please try again later.")
+        #st.error("500: An internal server error occurred. Please try again later.")
         return ""
     except Exception as e:
         # Log the specific exception but don't show traceback to the user
