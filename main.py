@@ -28,6 +28,12 @@ def download_textblob_corpora():
         
         nltk.data.path.append(nltk_data_path)  # Add path for NLTK corpora
         download_all()  # Download all required corpora
+        
+        # Check if 'punkt_tab' is available
+        try:
+            nltk.data.find('tokenizers/punkt_tab')
+        except LookupError:
+            st.error("The 'punkt_tab' resource is not available. Please ensure it is downloaded.")
     except Exception as e:
         st.error(f"Error downloading TextBlob corpora: {e}")
 
