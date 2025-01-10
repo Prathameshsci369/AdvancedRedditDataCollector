@@ -51,7 +51,7 @@ def download_textblob_corpora():
             #st.error("The 'punkt_tab' resource is not available. Please ensure it is downloaded.")
     except Exception as e:
         logger.error(f"Error downloading TextBlob corpora: {e}")
-        #st.error("An error occurred while downloading the required resources. Please try again.")
+        st.error("An error occurred while downloading the required resources. Please try again.")
 
 # Call this to ensure the required corpora are available
 download_textblob_corpora()
