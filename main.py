@@ -12,7 +12,11 @@ from wordcloud import WordCloud
 import matplotlib.pyplot as plt
 import nltk
 
-
+# Setup logging
+log_file = "reddit_analyzer.log"
+logging.basicConfig(level=logging.INFO, filename=log_file, filemode='a',
+                    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+logger = logging.getLogger('reddit_analyzer')
 
 # Ensure TextBlob corpora are downloaded
 @st.cache_resource
@@ -46,18 +50,15 @@ def download_textblob_corpora():
         except LookupError:
             st.error("The 'punkt_tab' resource is not available. Please ensure it is downloaded.")
     except Exception as e:
-        st.error(f"Error downloading TextBlob corpora: {e}")
+        logger.error(f"Error downloading TextBlob corpora: {e}")
+        st.error("An error occurred while downloading the required resources. Please try again.")
 
 # Call this to ensure the required corpora are available
 download_textblob_corpora()
 
 # Load environment variables
 
-# Setup logging
-log_file = "reddit_analyzer.log"
-logging.basicConfig(level=logging.INFO, filename=log_file, filemode='a',
-                    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
-logger = logging.getLogger('reddit_analyzer')
+
 
 # Directly define Reddit API Credentials
 REDDIT_CREDENTIALS = {
@@ -261,7 +262,12 @@ def audience_engagement_metrics(df):
 
 def generate_summary(df):
     """Generate a summary of discussions."""
-    sentences = df['title'].apply(lambda x: TextBlob(x).sentences)
+    try:
+        sentences = df['title'].apply(lambda x: TextBlob(x).sentences)
+    except TextBlob.exceptions.MissingCorpusError:
+        logger.error("Missing corpus error while generating summary.")
+        st.error("An error occurred while generating the summary. Please ensure all required resources are available.")
+        return ""
     summary = ' '.join([' '.join(map(str, sentence)) for sentence in sentences])
     return summary
 
