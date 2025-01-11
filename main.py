@@ -289,6 +289,9 @@ def generate_summary(df):
         #error_message = "500: An internal server error occurred. Please try again later."
         #st.error(error_message)
         st.write("Sample summary are here: ")
+        st.write("An error occurred while generating the summary. Here are some sample summaries:")
+        sample_summaries = df['title'].head(5).tolist()  # Display first 5 titles as samples
+        st.write(sample_summaries)
         
         
         # Log the full traceback for debugging purposes (you can monitor logs)
