@@ -268,30 +268,33 @@ def audience_engagement_metrics(df):
     st.write(f'Average Sentiment: {avg_sentiment:.2f}')
 
 
-import traceback
+from nltk.tokenize import sent_tokenize
 
 def generate_summary(df):
     """Generate a summary of discussions."""
     try:
-        # Attempt to extract sentences from the 'title' column using TextBlob
-        sentences = df['title'].apply(lambda x: TextBlob(x).sentences)
-   
+        # Attempt to extract sentences from the 'title' column using NLTK
+        sentences = df['title'].apply(lambda x: sent_tokenize(x))
+        
+        # Join the sentences into a single summary string
+        summary = ' '.join([' '.join(map(str, sentence)) for sentence in sentences])
+        return summary
+
     except Exception as e:
         # Log the specific exception but don't show traceback to the user
         logger.error(f"An unexpected error occurred while generating the summary: {str(e)}")
         
-        # Hide the detailed traceback from being shown in the Streamlit UI
-        #error_message = "500: An internal server error occurred. Please try again later."
-        #st.error(error_message)
+        # Provide a sample summary message
+        st.write("An error occurred while generating the summary. Here are some sample summaries:")
+        sample_summaries = df['title'].head(5).tolist()  # Display first 5 titles as samples
+        st.write(sample_summaries)
         
-        # Log the full traceback for debugging purposes (you can monitor logs)
+        # Log the full traceback for debugging purposes
         logger.error(f"Full error details: {traceback.format_exc()}")
         
         return ""
-    
-    # Join the sentences into a single summary string
-    summary = ' '.join([' '.join(map(str, sentence)) for sentence in sentences])
-    return summary
+
+
   
 
 
