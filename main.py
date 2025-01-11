@@ -296,9 +296,7 @@ def generate_summary(df):
         return ""
     
     # Join the sentences into a single summary string
-    summary = ' '.join([' '.join(map(str, sentence)) for sentence in sentences])
-    return summary
-        
+    
         
 
 
