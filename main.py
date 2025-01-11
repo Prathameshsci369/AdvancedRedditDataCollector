@@ -284,15 +284,22 @@ def generate_summary(df):
         # Log the specific exception but don't show traceback to the user
         logger.error(f"An unexpected error occurred while generating the summary: {str(e)}")
         
-        # Provide a sample summary message
-        st.write("An error occurred while generating the summary. Here are some sample summaries:")
-        sample_summaries = df['title'].head(5).tolist()  # Display first 5 titles as samples
-        st.write(sample_summaries)
+        # Hide the detailed traceback from being shown in the Streamlit UI
+        #error_message = "500: An internal server error occurred. Please try again later."
+        #st.error(error_message)
+        st.write("Sample summary are here: ")
         
-        # Log the full traceback for debugging purposes
+        
+        # Log the full traceback for debugging purposes (you can monitor logs)
         logger.error(f"Full error details: {traceback.format_exc()}")
         
         return ""
+    
+    # Join the sentences into a single summary string
+    summary = ' '.join([' '.join(map(str, sentence)) for sentence in sentences])
+    return summary
+        
+        
 
 
   
