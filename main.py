@@ -70,11 +70,11 @@ download_textblob_corpora()
 
 # Directly define Reddit API Credentials
 REDDIT_CREDENTIALS = {
-    'client_id': 'eXzS0WLU_9tV1gq9p9H0Pg',
-    'client_secret': 'waCj59cgW0Fz0fq8zPuoTK8nzRTzUQ',
-    'user_agent': 'python:com.example.redditanalyzer:v1.0 (by /u/Training_Student1147)',
-    'username': 'Training_Student1147',
-    'password': 'Palu@#$123'
+    'client_id': 'your_id',
+    'client_secret': 'your_secret_key',
+    'user_agent': 'python:com.example.redditanalyzer:v1.0 (by /u/your_username)',
+    'username': 'your username',
+    'password': 'your passwod'
 }
 
 def setup_reddit_api():
