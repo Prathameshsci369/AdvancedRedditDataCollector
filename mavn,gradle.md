@@ -2,7 +2,8 @@ coommands for the mavean project
 1. mvn compile
 2. mvn test
 3. mvn package
-4. mvn clean
+4. mvn clean install
+5. java -cp target/myapp-1.0-SNAPSHOT.jar com.example.App
 
 commands for the gradle project
 1. gradle build
