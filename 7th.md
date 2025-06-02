@@ -8,7 +8,7 @@ First Command are(ubuntu) sudo apt update
 
     cd ~/ansible-lab
 
-    nano hosts (alternative "mousepad hosts") paste following code on the hosts file localhost ansible_connection = local on the nano press CTRL + O and after press CTRL + X
+    nano hosts (alternative "mousepad hosts") paste following code on the hosts file "localhost ansible_connection = local" on the nano press CTRL + O and after press CTRL + X
 
     after the creating the above file now execute this comments
 
